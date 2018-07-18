@@ -29,7 +29,24 @@ namespace Nop.Services.Tasks
         static TaskThread()
         {
             var storeContext = EngineContext.Current.Resolve<IStoreContext>();
-            _scheduleTaskUrl = $"{storeContext.CurrentStore.Url}{NopTaskDefaults.ScheduleTaskPath}";
+            var urlName = storeContext.CurrentStore.Url;
+            if (!urlName.Contains("http://localhost"))
+            {
+                try
+                {
+                    WebRequest request = WebRequest.Create(urlName);
+                    request.Timeout = 5000;
+                    request.Method = "HEAD";
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    response.Close();
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.InnerException.Message + $". Attempt to reach the host: '{urlName}'");
+                }
+            }
+
+            _scheduleTaskUrl = $"{urlName}{NopTaskDefaults.ScheduleTaskPath}";
         }
 
         internal TaskThread()
